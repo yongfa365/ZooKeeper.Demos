@@ -16,7 +16,6 @@ namespace ZooKeeperSample
 
         public static void Watch()
         {
-            // 那些需要 watch ，则又没有单独提供 IWatch 实例的，都通过这个Register 注册的watch实例执行
             // 这里注册的 watch 实例会覆盖 new Zookeeper() 时指定的 watch 实例
             // 如果注册多个，则会把最后注册的覆盖之前注册的
             zk.Register(new WatchCommon(zk));
