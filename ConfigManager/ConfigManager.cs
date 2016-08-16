@@ -9,11 +9,11 @@ namespace ConfigManager
 {
     public class ConfigManager
     {
-        public static ZooKeeper zk = new ZooKeeper("192.168.119.131:2181,192.168.119.132:2181", new TimeSpan(0, 30, 30), null);
+        public ZooKeeper zk = new ZooKeeper("192.168.119.131:2181,192.168.119.132:2181", new TimeSpan(0, 30, 30), null);
 
-        public static void CreateNode()
+        public void CreateNode()
         {
-            var stat = zk.Exists("/configuration",false);
+            var stat = zk.Exists("/configuration", false);
             if (stat == null)
             {
                 try
@@ -38,27 +38,31 @@ namespace ConfigManager
             }
         }
 
-        public static void SetData(string input)
+        public void SetData(string input)
         {
             try
             {
                 zk.SetData("/configuration", Encoding.UTF8.GetBytes(input), -1);
             }
-            catch(KeeperException.NoNodeException ex)
+            catch (KeeperException.NoNodeException ex)
             {
                 throw new Exception("节点不存在");
             }
         }
+    }
 
+    public class program
+    {
         public static void Main(string[] args)
         {
             //CreateNode();
 
             var data = string.Empty;
-            while(true)
+            var manager = new ConfigManager();
+            while (true)
             {
                 data = Console.ReadLine();
-                SetData(data);
+                manager.SetData(data);
             }
         }
     }
