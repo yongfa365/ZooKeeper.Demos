@@ -9,45 +9,31 @@ using ZooKeeperNet;
 
 namespace DistributorLocker
 {
-    public class Locker : IWatcher
+    public class Locker : IWatcher,IDisposable
     {
         //创建的节点名
-        public string OurPath;
-        //父节点路径
-        public string Parent;
+        private string OurPath;
 
-        public string ConnectionString;
+        private ZooKeeper ZK;
 
-        private TimeSpan sessionTimeout = new TimeSpan(0, 0, 30);
-        private ZooKeeper zk;
-        public void CreateConnection()
+        public Locker(ZooKeeper zk,string ourPath)
         {
-            try
+            ZK = zk;
+            OurPath = ourPath;
+            var parent = OurPath.Substring(0, OurPath.LastIndexOf('/'));
+            if (ZK.Exists(parent, false) == null)
             {
-                zk = new ZooKeeper(ConnectionString, sessionTimeout, null);
-                zk.Register(new Locker());
-                if (zk.Exists(Parent, false) == null)
-                {
-                    zk.Create(Parent, "".GetBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.Persistent);
-                }
+                ZK.Create(parent, "".GetBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.Persistent);
             }
-            catch (Exception ex)
+            if (ZK.Exists(OurPath, false) == null)
             {
+                OurPath = ZK.Create(OurPath, "".GetBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.EphemeralSequential);
             }
         }
 
-        //访问Locker
-        public virtual void Invisit()
-        {
-        }
-
-        /// <summary>
-        /// 等待次小节点的删除
-        /// </summary>
-        /// <param name="lower">比自己的次小节点</param>
         public void WaitForLock(string lower)
         {
-            Stat stat = zk.Exists(Parent + "/" + lower, true);
+            Stat stat = ZK.Exists(lower, true);
             if (stat == null)
             {
                 IsGetLock();
@@ -64,20 +50,15 @@ namespace DistributorLocker
 
         public bool IsGetLock()
         {
-            if(zk==null)
+            if (ZK.Exists(OurPath, false) == null)
             {
-                CreateConnection();
+                ZK.Register(new Locker(ZK, OurPath));
             }
-            if (zk.Exists($"{Parent}/{OurPath}", false) == null)
-            {
-                OurPath = zk.Create($"{Parent}/{OurPath}", "".GetBytes(), Ids.OPEN_ACL_UNSAFE, CreateMode.EphemeralSequential);
-            }
-            var nodes = zk.GetChildren(Parent, false).ToList();
+            var parent = OurPath.Substring(0, OurPath.LastIndexOf('/'));
+            var nodes = ZK.GetChildren(parent, false).ToList();
             nodes.Sort();
-            if (OurPath.Equals(Parent + "/" + nodes[0]))
+            if (OurPath.Equals(parent + "/" + nodes[0]))
             {
-                Invisit();
-                UnLock();
                 return true;
             }
             else
@@ -91,19 +72,14 @@ namespace DistributorLocker
                         lower = nodes[i - 1];
                     }
                 }
-                WaitForLock(lower);
+                WaitForLock(parent+"/"+lower);
                 return false;
             }
         }
 
-        /// <summary>
-        /// 释放锁
-        /// </summary>
-        public void UnLock()
+        public void Dispose()
         {
-           zk.Delete(OurPath, -1);
-           zk.Dispose();
+            ZK.Delete(OurPath, -1);
         }
     }
-
 }

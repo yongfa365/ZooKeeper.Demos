@@ -4,36 +4,34 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ZooKeeperNet;
 
 namespace DistributorLocker
 {
-    public class InvistLocker : Locker
-    {
-        public override void Invisit()
-        {
-            Thread.Sleep(1000);
-        }
-    }
     public class Program
     {
         public static void Main(string[] args)
-        {
-            var locker = new InvistLocker();
-            locker.ConnectionString = "192.168.119.131:2181";
-            locker.OurPath = "seq";
-            locker.Parent = "/locker";
-
-            try
+        {            
+            var connectionString = "192.168.119.131:2181";
+            var sessionTimeout = new TimeSpan(0, 0, 30);
+            var ourPath = "/locker/seq";
+            using (var zk = new ZooKeeper(connectionString, sessionTimeout, null))
             {
-                while (!locker.IsGetLock())
+                using (var locker = new Locker(zk, ourPath))
                 {
-                    Thread.Sleep(500);
+                    var isGetLock = locker.IsGetLock();
+                    while (!isGetLock)
+                    {
+                        isGetLock = locker.IsGetLock();
+                        Thread.Sleep(1000);
+                    }
+                    if(isGetLock)
+                    {
+                        //访问资源
+                        Thread.Sleep(5000);
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+            }   
             Console.ReadLine();
         }
     }
