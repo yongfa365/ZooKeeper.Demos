@@ -23,7 +23,7 @@ namespace Locker
 
         public void waitForLock(String lower)
         {
-
+            zk.Register(new LockerCommon());
             //监听比自己次小的节点
             Stat stat = zk.Exists(root + "/" + lower, true);
             if (stat != null)
