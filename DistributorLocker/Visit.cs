@@ -20,9 +20,9 @@ namespace DistributorLocker
                 using (var locker = new Locker(zk, ourPath))
                 {
                     locker.GetLock();
-                    while (!Locker.HasGetLock)
+                    if(!Locker.HasGetLock)
                     {
-                        Thread.Sleep(1000);
+                        Locker.monitor.WaitOne();
                     }
                     if(Locker.HasGetLock)
                     {

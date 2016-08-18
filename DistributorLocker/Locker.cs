@@ -18,6 +18,8 @@ namespace DistributorLocker
 
         public static bool HasGetLock;
 
+        public static AutoResetEvent monitor = new AutoResetEvent(false);
+
         public Locker(ZooKeeper zk,string ourPath)
         {
             ZK = zk;
@@ -63,6 +65,7 @@ namespace DistributorLocker
             if (OurPath.Equals(parent + "/" + nodes[0]))
             {
                 HasGetLock = true;
+                monitor.Set();
             }
             else
             {
