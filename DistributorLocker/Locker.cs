@@ -55,10 +55,6 @@ namespace DistributorLocker
 
         public void GetLock()
         {
-            if (ZK.Exists(OurPath, false) != null)
-            {
-                ZK.Register(new Locker(ZK, OurPath));
-            }
             var parent = OurPath.Substring(0, OurPath.LastIndexOf('/'));
             var nodes = ZK.GetChildren(parent, false).ToList();
             nodes.Sort();
@@ -69,6 +65,11 @@ namespace DistributorLocker
             }
             else
             {
+                //注册watch
+                if (ZK.Exists(OurPath, false) != null)
+                {
+                    ZK.Register(new Locker(ZK, OurPath));
+                }
                 var myNode = OurPath.Substring(OurPath.LastIndexOf('/') + 1);
                 var lower = string.Empty;
                 for (int i = 0; i < nodes.Count; i++)
