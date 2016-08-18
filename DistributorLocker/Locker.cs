@@ -16,6 +16,8 @@ namespace DistributorLocker
 
         private ZooKeeper ZK;
 
+        public static bool HasGetLock;
+
         public Locker(ZooKeeper zk,string ourPath)
         {
             ZK = zk;
@@ -34,9 +36,10 @@ namespace DistributorLocker
         public void WaitForLock(string lower)
         {
             Stat stat = ZK.Exists(lower, true);
+            //watch lower之前,lower已經被刪了
             if (stat == null)
             {
-                IsGetLock();
+                GetLock();
             }
         }
 
@@ -44,13 +47,13 @@ namespace DistributorLocker
         {
             if (@event.Type == EventType.NodeDeleted)
             {
-                IsGetLock();
+                GetLock();
             }
         }
 
-        public bool IsGetLock()
+        public void GetLock()
         {
-            if (ZK.Exists(OurPath, false) == null)
+            if (ZK.Exists(OurPath, false) != null)
             {
                 ZK.Register(new Locker(ZK, OurPath));
             }
@@ -59,7 +62,7 @@ namespace DistributorLocker
             nodes.Sort();
             if (OurPath.Equals(parent + "/" + nodes[0]))
             {
-                return true;
+                HasGetLock = true;
             }
             else
             {
@@ -73,7 +76,7 @@ namespace DistributorLocker
                     }
                 }
                 WaitForLock(parent+"/"+lower);
-                return false;
+                HasGetLock = false;
             }
         }
 

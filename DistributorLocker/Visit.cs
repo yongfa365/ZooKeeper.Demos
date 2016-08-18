@@ -19,13 +19,12 @@ namespace DistributorLocker
             {
                 using (var locker = new Locker(zk, ourPath))
                 {
-                    var isGetLock = locker.IsGetLock();
-                    while (!isGetLock)
+                    locker.GetLock();
+                    while (!Locker.HasGetLock)
                     {
-                        isGetLock = locker.IsGetLock();
                         Thread.Sleep(1000);
                     }
-                    if(isGetLock)
+                    if(Locker.HasGetLock)
                     {
                         //访问资源
                         Thread.Sleep(5000);
