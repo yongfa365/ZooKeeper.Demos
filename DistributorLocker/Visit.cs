@@ -20,15 +20,12 @@ namespace DistributorLocker
                 using (var locker = new Locker(zk, ourPath))
                 {
                     locker.GetLock();
-                    if(!Locker.HasGetLock)
+                    if (!Locker.HasGetLock)
                     {
                         Locker.monitor.WaitOne();
                     }
-                    if(Locker.HasGetLock)
-                    {
-                        //访问资源
-                        Thread.Sleep(5000);
-                    }
+                   //访问资源
+                   Thread.Sleep(5000);
                 }
             }   
             Console.ReadLine();
