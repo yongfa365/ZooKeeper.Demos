@@ -16,17 +16,15 @@ namespace DistributorLocker
             var sessionTimeout = new TimeSpan(0, 0, 30);
             var ourPath = "/locker/seq";
             using (var zk = new ZooKeeper(connectionString, sessionTimeout, null))
+            using (var locker = new Locker(zk, ourPath))
             {
-                using (var locker = new Locker(zk, ourPath))
+                locker.GetLock();
+                if (!Locker.HasGetLock)
                 {
-                    locker.GetLock();
-                    if (!Locker.HasGetLock)
-                    {
-                        Locker.monitor.WaitOne();
-                    }
-                   //访问资源
-                   Thread.Sleep(5000);
+                    Locker.monitor.WaitOne();
                 }
+                //访问资源
+                Thread.Sleep(5000);
             }   
             Console.ReadLine();
         }
